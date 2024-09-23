@@ -39,7 +39,8 @@ async function getTransactionData(transactionHash) {
     return data.data.result;
   })
   // const encodedTransactionData = await web3.eth.getTransaction(transactionHash);
-  if (encodedTransactionData?.input !== '0x') {
+  if (encodedTransactionData && encodedTransactionData?.input !== '0x') {
+    console.log(encodedTransactionData)
     const abiURL = `${ETHER_SCAN_API_ENDPOINT}?module=contract&action=getabi&address=${encodedTransactionData.to}&apikey=${ETHER_SCAN_API_KEY}`;
     const abiContractData = await axiosLimitCals.get(abiURL).then(data => {
       return data.data.result;
