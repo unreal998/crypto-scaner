@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@coinpaprika/api-nodejs-client": "^2.0.0",
     "axios": "^1.7.4",
     "axios-rate-limit": "^1.4.0",
     "cors": "^2.8.5",
