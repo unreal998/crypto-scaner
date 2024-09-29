@@ -27,15 +27,17 @@ const axiosLimitCals = rateLimit(axios.create(), {
   perMilliseconds: 1200,
 });
 
-// Сигнатури функцій для свопів (Uniswap, Sushiswap та інші популярні DEX)
-const SWAP_FUNCTION_SIGNATURES = [
-  "0x38ed1739", // swapExactTokensForTokens
-  "0x8803dbee", // swapExactETHForTokens
-  "0x4a25d94a", // swapTokensForExactTokens
-  "0x18cbafe5", // swapExactTokensForETH
-  "0x7ff36ab5", // swapExactETHForTokensSupportingFeeOnTransferTokens
-  "0x5c11d795", // swapTokensForExactETH
-  "0x415565b0", // (інша своп-функція)
+// Сигнатури функцій для свопів (Uniswap V2, V3, SushiSwap)
+const UNISWAP_V2_SWAP_SIGNATURES = ["0x38ed1739"]; // swapExactTokensForTokens
+const UNISWAP_V3_SWAP_SIGNATURES = [
+  "0x414bf389", // exactInputSingle
+  "0xf78dc253", // exactInput
+  "0x09ab8fe7", // exactOutputSingle
+  "0x4a817c80", // exactOutput
+  "0x38ed1739", // swapExactTokensForTokens (аналогічно Uniswap V2)
+];
+const SUSHISWAP_SWAP_SIGNATURES = [
+  "0x38ed1739", // swapExactTokensForTokens (аналогічно Uniswap V2)
 ];
 
 // Функція для отримання останніх транзакцій
@@ -50,14 +52,18 @@ async function getLastTransactions() {
     });
 }
 
-// Функція для перевірки чи транзакція є свопом
+// Функція для перевірки, чи транзакція є свопом Uniswap або SushiSwap
 function isSwapTransaction(input) {
   if (!input) {
     return false; // Якщо input не існує, це не своп
   }
 
   const methodSignature = input.slice(0, 10); // Перші 4 байти — це сигнатура методу
-  return SWAP_FUNCTION_SIGNATURES.includes(methodSignature);
+  return (
+    UNISWAP_V2_SWAP_SIGNATURES.includes(methodSignature) ||
+    UNISWAP_V3_SWAP_SIGNATURES.includes(methodSignature) ||
+    SUSHISWAP_SWAP_SIGNATURES.includes(methodSignature)
+  );
 }
 
 // Функція для декодування кожного поля транзакції
@@ -90,42 +96,14 @@ function decodeTransaction(transaction) {
   return decodedData;
 }
 
-// Функція для декодування параметрів свопу
-function decodeSwapParams(encodedTransactionData) {
-  const methodSignature = encodedTransactionData.input.slice(0, 10);
-
-  if (methodSignature === "0x38ed1739") {
-    // swapExactTokensForTokens
-    const decodedParams = web3.eth.abi.decodeParameters(
-      [
-        { type: "uint256", name: "amountIn" },
-        { type: "uint256", name: "amountOutMin" },
-        { type: "address[]", name: "path" },
-        { type: "address", name: "to" },
-        { type: "uint256", name: "deadline" },
-      ],
-      encodedTransactionData.input.slice(10)
-    );
-
-    console.log(`Swap Tokens: ${decodedParams.amountIn} input tokens`);
-    console.log(`Output minimum: ${decodedParams.amountOutMin}`);
-    console.log(`Path: ${decodedParams.path}`);
-    console.log(`To address: ${decodedParams.to}`);
-  }
-
-  // Додати інші умови для різних методів (наприклад, swapExactETHForTokens і т.д.)
-}
-
 // Функція для отримання даних про транзакцію і декодування input
 async function getTransactionData(transactionHash) {
   const transactionURL = `${ETHER_SCAN_API_ENDPOINT}?module=proxy&action=eth_getTransactionByHash&txhash=${transactionHash}&apikey=${ETHER_SCAN_API_KEY}`;
   const encodedTransactionData = await axiosLimitCals
     .get(transactionURL)
-    .then((data) => {
-      return data.data.result;
-    });
+    .then((data) => data.data.result);
 
-  // Перевіряємо, чи транзакція є свопом
+  // Перевіряємо, чи транзакція є свопом Uniswap або SushiSwap
   if (
     encodedTransactionData &&
     encodedTransactionData.input !== "0x" &&
@@ -135,12 +113,10 @@ async function getTransactionData(transactionHash) {
 
     // Декодування полів транзакції
     decodeTransaction(encodedTransactionData);
-
-    // Декодування параметрів свопу
-    decodeSwapParams(encodedTransactionData);
   }
 }
 
+// Отримуємо останні транзакції і перевіряємо їх
 getLastTransactions().then((data) => {
   data.forEach((element) => {
     getTransactionData(element);
