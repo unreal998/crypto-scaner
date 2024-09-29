@@ -116,6 +116,8 @@ async function decodeTransactionSignature(transactionHash) {
           log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
       );
       let swapDetails = [];
+      let firstTransfer = null;
+      let secondTransfer = null;
 
       transferEvents.forEach(async (event, index) => {
         const from = `0x${event.topics[1].slice(26)}`;
@@ -129,10 +131,30 @@ async function decodeTransactionSignature(transactionHash) {
         swapDetails.push({ from, to, value, tokenSymbol });
 
         if (index === 0) {
-          console.log(`Swap for ${value} ${tokenSymbol}`);
+          firstTransfer = { value, tokenSymbol };
         }
         if (index === 1) {
-          console.log(`Swap ${value} ${tokenSymbol}`);
+          secondTransfer = { value, tokenSymbol };
+        }
+
+        if (to.toLowerCase() === "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad") {
+          console.log(`Swap for ${value} ${tokenSymbol}`);
+        }
+
+        if (firstTransfer && secondTransfer) {
+          if (firstTransfer.tokenSymbol === secondTransfer.tokenSymbol) {
+            const largerValue =
+              Number(firstTransfer.value) > Number(secondTransfer.value)
+                ? firstTransfer.value
+                : secondTransfer.value;
+            console.log(
+              `Swap ${largerValue} ${firstTransfer.tokenSymbol} (between first and second transfer)`
+            );
+          } else {
+            console.log(
+              `Swap ${firstTransfer.value} ${firstTransfer.tokenSymbol}`
+            );
+          }
         }
       });
 
@@ -152,5 +174,5 @@ async function decodeTransactionSignature(transactionHash) {
 }
 
 const transactionHash =
-  "0xef2db703a5688871360a8af58e907b453a21ce45c0da9c1dd373477575875d5a";
+  "0xe835e0c8fccabe38b8ac4527a1ce8bb9684dd229c5b4beced7b72b49be39d638";
 decodeTransactionSignature(transactionHash);
