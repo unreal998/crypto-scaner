@@ -79,6 +79,14 @@ async function getTokenSymbol(tokenAddress) {
   ) {
     return "ETH"; // Повертаємо ETH замість WETH
   }
+
+  // Додаємо INTX символ вручну
+  if (
+    tokenAddress.toLowerCase() === "0xeec55f2f009d2a94d6a181bc49c830f649aba94f"
+  ) {
+    return "INTX";
+  }
+
   const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
   try {
     const symbol = await tokenContract.methods.symbol().call();
@@ -138,27 +146,27 @@ async function decodeTransactionSignature(transactionHash) {
       let firstTransfer = null;
       let secondTransfer = null;
 
-      transferEvents.forEach(async (event, index) => {
+      transferEvents.forEach(async (event, index, array) => {
         const from = `0x${event.topics[1].slice(26)}`;
         const to = `0x${event.topics[2].slice(26)}`;
         const tokenAddress = event.address;
         const tokenSymbol = await getTokenSymbol(tokenAddress);
         const decimals = await getTokenDecimals(tokenAddress);
 
-        const value = BigInt(event.data); // Використовуємо BigInt для отримання значення
+        const value = BigInt(event.data); // Використовуємо BigInt для значення
 
         // Рахуємо кориговане значення вручну, використовуючи BigInt для обчислень
-        const factor = BigInt(10) ** BigInt(decimals); // Використовуємо BigInt для степеню
+        const factor = BigInt(10) ** BigInt(decimals); // Степінь 10
         const wholePart = value / factor; // Ціла частина
-        const fractionalPart = value % factor; // Десяткова частина
+        const fractionalPart = value % factor; // Дробова частина
 
-        // Перетворюємо дробову частину на рядок і застосовуємо padStart після конвертації в рядок
-        let adjustedValue = `${wholePart.toString()}.${fractionalPart
+        // Преобразуємо дробову частину в строку і застосовуємо padStart
+        let fractionalPartStr = fractionalPart
           .toString()
-          .padStart(Number(decimals), "0")}`;
+          .padStart(Number(decimals), "0");
 
-        // Обрізаємо зайві нулі та залишаємо два десяткові знаки
-        adjustedValue = parseFloat(adjustedValue);
+        // Формуємо остаточне значення як цілу і дробову частину
+        let adjustedValue = `${wholePart.toString()}.${fractionalPartStr}`;
 
         // Виводимо скориговане значення як рядок
         swapDetails.push({
@@ -175,7 +183,12 @@ async function decodeTransactionSignature(transactionHash) {
           secondTransfer = { value: adjustedValue, tokenSymbol };
         }
 
-        if (to.toLowerCase() === "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad") {
+        // Якщо є дві події Transfer, остання подія є "Swap for"
+        if (array.length === 2 && index === 1) {
+          console.log(`Swap for ${adjustedValue} ${tokenSymbol}`);
+        } else if (
+          to.toLowerCase() === "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad"
+        ) {
           console.log(`Swap for ${adjustedValue} ${tokenSymbol}`);
         }
 
@@ -213,21 +226,20 @@ async function decodeTransactionSignature(transactionHash) {
 }
 
 const transactionHash =
-  "0x08d2124b9af0d89b1208fe8f66d972cdc0eddb0c55745da864165cf063422828";
+  "0x9438ecc9d77e1e0ae8ecf57a615443a1f24b3f8fd827beb5dfd34fc5d7dcc4aa";
 decodeTransactionSignature(transactionHash);
 
 /* 
-https://etherscan.io/tx/0x7baa261a0486782ed1835af133dfc2b43c80c335cc4eae6d70a3c93fd154bc0d
-https://etherscan.io/tx/0x2e0880bd8c7cd5f79d9e35ccd38fdbbfdfc02c7efedd9fb4247c4c56be8b8ed5
-https://etherscan.io/tx/0x92878f100f1f465cab672242b2d0cdeb5aaabad276ba917737a3e1d282c006cc
-https://etherscan.io/tx/0x4438d2d1eb3497903013ffd77df11a6c748a40491c073fc316318980ac244521
-https://etherscan.io/tx/0xb09ab7d12333587b8a68722a3ad3deb471d6d26acfbb68b3033fa6780478cc4a
-https://etherscan.io/tx/0x11423d1d4f7c74675ef1d287e7dff58ea0f80e8a7c717297fb4d83934b12709d
-https://etherscan.io/tx/0x94b37e13e1f3766192cff116e98c34b09d96cb35f100066f8f76fc58ba24dd4e
-https://etherscan.io/tx/0x1864da167aa1891653d878199c64e53fabd88b4a38817dd4d2d927ca7863c16e
-https://etherscan.io/tx/0xd4f5bcf776dd9f115e532e20214522154d4bea218886b2904cc5f23a3a2c1b8f
-https://etherscan.io/tx/0x812318856aa6c4e5fa88a5e5609d6dacf386de6558dbfd53824ac9e811bdb7e4
-https://etherscan.io/tx/0xe89fc4876c799efcac43d59502938ea324c0957bcc5b08c6e90bf51792a25d80
-https://etherscan.io/tx/0x7ed7facf35139c966bddf9967ff00ff1f653f5c1169a22abc3bdcb22554e746d
-https://etherscan.io/tx/0x827f8d8e92931def15eb09c84a5da62b72ce266e8018ca1b96854bae31e74e95
+https://etherscan.io/tx/0x2e0880bd8c7cd5f79d9e35ccd38fdbbfdfc02c7efedd9fb4247c4c56be8b8ed5 - v3+2
+https://etherscan.io/tx/0xa405a7b02b6d6c817ebb817007537afa21506d38bf647061cb55d7c0fad75023 - v3+2
+https://etherscan.io/tx/0x92878f100f1f465cab672242b2d0cdeb5aaabad276ba917737a3e1d282c006cc - v3
+https://etherscan.io/tx/0x4438d2d1eb3497903013ffd77df11a6c748a40491c073fc316318980ac244521 - v3
+https://etherscan.io/tx/0x1864da167aa1891653d878199c64e53fabd88b4a38817dd4d2d927ca7863c16e - v3
+https://etherscan.io/tx/0xe89fc4876c799efcac43d59502938ea324c0957bcc5b08c6e90bf51792a25d80 - v3
+https://etherscan.io/tx/0xd3e3a4095df7a6ea2dd3a9c64010379d26ccdb1ed5156a5ac1f0e61ba6a3cb90 - v3
+https://etherscan.io/tx/0x0147dfca5f28bdbc67012608a1c2019d7cd5196f306913ead1bf5b5a29b4cfaa - v3
+https://etherscan.io/tx/0xb3a44af2473fa53f263c60b08c2da8c017faf726b0b0a59effcf53173620c70d - v3
+https://etherscan.io/tx/0xc7cc355291136d5307da487c6df485df41703d85667555dfc3998af5ba7f8f68 - v3
+
+
 */
