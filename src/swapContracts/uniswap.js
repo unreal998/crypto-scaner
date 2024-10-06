@@ -240,7 +240,6 @@ async function decodeTransactionSignature(transactionHash) {
           const tokenSymbol = swapDetails[1].tokenSymbol;
 
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v3`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -255,7 +254,6 @@ async function decodeTransactionSignature(transactionHash) {
           hasTwoTokenSymbols === false
         ) {
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v3+v3/v3+v2`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -272,7 +270,6 @@ async function decodeTransactionSignature(transactionHash) {
           hasTwoTokenSymbols === true
         ) {
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v3+v3/v3+v2 - liquidity`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -286,7 +283,6 @@ async function decodeTransactionSignature(transactionHash) {
           hasTwoTokenSymbols === false
         ) {
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v2+v3`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -345,7 +341,6 @@ async function decodeTransactionSignature(transactionHash) {
           );
 
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v2+v3 - liquidity`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -355,7 +350,6 @@ async function decodeTransactionSignature(transactionHash) {
         } else {
           // Uniswap V2 / Uniswap V2 + Uniswap V2
           console.log("----------------------------------------------------");
-          console.log(`Uniswap v2/v2+v2`);
           console.log(`Transaction Hash: ${transactionHash}`);
           console.log("----------------------------------------------------");
           console.log(`From: ${fromAddress}`);
@@ -375,5 +369,7 @@ async function decodeTransactionSignature(transactionHash) {
 }
 
 const transactionHash =
-  "0xf81c940c7b3c2d9158c4366fcab216c89ae4f9ba3c1865bbe79fefb69836935a";
+  "0x6e496f9a9e0b957ff68d28f2bddadb56ac452fc5d180e68367e11bfd26cb6757";
 decodeTransactionSignature(transactionHash);
+
+//73

@@ -12,8 +12,10 @@
   "license": "ISC",
   "dependencies": {
     "@coinpaprika/api-nodejs-client": "^2.0.0",
-    "axios": "^1.7.4",
+    "axios": "^1.7.7",
     "axios-rate-limit": "^1.4.0",
+    "bignumber.js": "^9.1.2",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "crypto-scanner": "file:",
     "ethers": "^6.13.2",
