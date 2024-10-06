@@ -3,6 +3,7 @@ import cors from "cors";
 import path from "path";
 import http from "http";
 import Web3 from "web3";
+import fs from "fs"; // Модуль для роботи з файлами
 
 const app = express();
 const __dirname = path.resolve();
@@ -21,6 +22,16 @@ const web3 = new Web3(
 );
 
 let lastCheckedBlock = null; // Змінна для зберігання останнього перевіреного блоку
+const logFilePath = path.join(__dirname, "transactions_log.txt"); // Шлях до файлу для запису
+
+// Функція для запису даних у файл
+function logToFile(data) {
+  fs.appendFile(logFilePath, data + "\n", (err) => {
+    if (err) {
+      console.error("Помилка запису в файл:", err);
+    }
+  });
+}
 
 // Функція для отримання останнього блоку і його транзакцій
 async function getLastTransactions() {
@@ -31,10 +42,17 @@ async function getLastTransactions() {
     if (lastCheckedBlock !== latestBlock.number) {
       lastCheckedBlock = latestBlock.number;
 
-      // Виводимо хеші транзакцій
-      latestBlock.transactions.forEach((txHash) => {
-        console.log(`hash: '${txHash}'`);
-      });
+      // Обробляємо кожну транзакцію
+      for (const txHash of latestBlock.transactions) {
+        const transaction = await web3.eth.getTransaction(txHash);
+
+        // Сигнатура методу - це перші 4 байти від поля input
+        const methodSignature = transaction.input.slice(0, 10); // 0x + 8 символів (4 байти)
+
+        const logData = `hash: '${txHash}', method signature: '${methodSignature}'`;
+        console.log(logData); // Виводимо в консоль
+        logToFile(logData); // Записуємо в файл
+      }
     } else {
       console.log("Немає нових блоків...");
     }
@@ -43,7 +61,7 @@ async function getLastTransactions() {
   }
 }
 
-// Запуск перевірки нових транзакцій кожні секунду
+// Запуск перевірки нових транзакцій кожні 2 секунди
 setInterval(() => {
   getLastTransactions();
 }, 2000);
