@@ -29,14 +29,14 @@ const extractWrapperContent = ($) => {
 
 // Виділяємо всі swap-и
 const extractSwaps = (content) =>
-  content.includes("Swap")
+  content.toLowerCase().includes("swap")
     ? content
-        .split(/(?=Swap)/)
+        .split(/(?=Swap|swap)/)
         .filter(
           (text) =>
             text.trim() &&
-            !text.includes("Aggregated") &&
-            !text.includes("Swap Of")
+            !text.toLowerCase().includes("aggregated") &&
+            !text.toLowerCase().includes("swap of")
         )
     : [];
 
@@ -44,7 +44,7 @@ const extractSwaps = (content) =>
 const sumSwapAmounts = (cleanedSwaps, swapToken, swapForToken, contract) => {
   const lastSwapParts = cleanedSwaps[0].split(" ");
   const lastElement = lastSwapParts[lastSwapParts.length - 1];
-  if (lastElement !== "Uniswap") {
+  if (lastElement.toLowerCase() !== "uniswap") {
     return { totalSwapAmount: null, totalForAmount: null, allMatches: false };
   }
 
@@ -55,9 +55,13 @@ const sumSwapAmounts = (cleanedSwaps, swapToken, swapForToken, contract) => {
   cleanedSwaps.forEach((swap) => {
     const swapParts = swap.split(" ");
 
-    const currentSwapToken = swapParts[swapParts.indexOf("For") - 1];
-    const currentSwapForToken = swapParts[swapParts.indexOf("On") - 1];
-    const currentContract = swapParts[swapParts.indexOf("On") + 1];
+    // Пошук без урахування регістру
+    const currentSwapToken =
+      swapParts[swapParts.map((el) => el.toLowerCase()).indexOf("for") - 1];
+    const currentSwapForToken =
+      swapParts[swapParts.map((el) => el.toLowerCase()).indexOf("on") - 1];
+    const currentContract =
+      swapParts[swapParts.map((el) => el.toLowerCase()).indexOf("on") + 1];
 
     if (
       currentSwapToken === swapToken &&
@@ -66,7 +70,9 @@ const sumSwapAmounts = (cleanedSwaps, swapToken, swapForToken, contract) => {
     ) {
       const swapAmount = new BigNumber(swapParts[1].replace(/,/g, ""));
       const forAmount = new BigNumber(
-        swapParts[swapParts.indexOf("For") + 1].replace(/,/g, "")
+        swapParts[
+          swapParts.map((el) => el.toLowerCase()).indexOf("for") + 1
+        ].replace(/,/g, "")
       );
       totalSwapAmount = totalSwapAmount.plus(swapAmount);
       totalForAmount = totalForAmount.plus(forAmount);
@@ -95,17 +101,19 @@ const displaySwapResults = (
 const handleTwoSwaps = (cleanedSwaps, swapToken, swapForToken, contract) => {
   const firstSwap = cleanedSwaps[0].split(" ");
   const secondSwap = cleanedSwaps[1].split(" ");
-  const firstValue = `${firstSwap[firstSwap.indexOf("For") + 1]} ${
-    firstSwap[firstSwap.indexOf("For") + 2]
-  }`;
-  const secondValue = `${secondSwap[secondSwap.indexOf("Swap") + 1]} ${
-    secondSwap[secondSwap.indexOf("Swap") + 2]
+  const firstValue = `${
+    firstSwap[firstSwap.map((el) => el.toLowerCase()).indexOf("for") + 1]
+  } ${firstSwap[firstSwap.map((el) => el.toLowerCase()).indexOf("for") + 2]}`;
+  const secondValue = `${
+    secondSwap[secondSwap.map((el) => el.toLowerCase()).indexOf("swap") + 1]
+  } ${
+    secondSwap[secondSwap.map((el) => el.toLowerCase()).indexOf("swap") + 2]
   }`;
 
   if (firstValue === secondValue) {
     console.log(
       `Swap ${firstSwap[1]} ${firstSwap[2]} For ${secondSwap
-        .slice(secondSwap.indexOf("For") + 1)
+        .slice(secondSwap.map((el) => el.toLowerCase()).indexOf("for") + 1)
         .join(" ")}`
     );
   } else {
@@ -142,8 +150,10 @@ const handleMultipleSwaps = (cleanedSwaps) => {
     const swapInfo = swap.split(" ");
     const amount = new BigNumber(swapInfo[1].replace(/,/g, ""));
     const token = swapInfo[2];
-    const swapForToken = swapInfo[swapInfo.indexOf("For") - 1];
-    const swapContract = swapInfo[swapInfo.indexOf("On") + 1];
+    const swapForToken =
+      swapInfo[swapInfo.map((el) => el.toLowerCase()).indexOf("for") - 1];
+    const swapContract =
+      swapInfo[swapInfo.map((el) => el.toLowerCase()).indexOf("on") + 1];
 
     if (index % 2 === 0) {
       // Непарні swap-и
@@ -155,7 +165,11 @@ const handleMultipleSwaps = (cleanedSwaps) => {
         contractOdd = swapContract;
         sumOddSwaps = sumOddSwaps.plus(amount);
         totalTokenOdd = totalTokenOdd.plus(
-          new BigNumber(swapInfo[swapInfo.indexOf("For") + 1].replace(/,/g, ""))
+          new BigNumber(
+            swapInfo[
+              swapInfo.map((el) => el.toLowerCase()).indexOf("for") + 1
+            ].replace(/,/g, "")
+          )
         );
       } else {
         conditionMet = false;
@@ -170,7 +184,11 @@ const handleMultipleSwaps = (cleanedSwaps) => {
         contractEven = swapContract;
         sumEvenSwaps = sumEvenSwaps.plus(amount);
         totalTokenEven = totalTokenEven.plus(
-          new BigNumber(swapInfo[swapInfo.indexOf("For") + 1].replace(/,/g, ""))
+          new BigNumber(
+            swapInfo[
+              swapInfo.map((el) => el.toLowerCase()).indexOf("for") + 1
+            ].replace(/,/g, "")
+          )
         );
       } else {
         conditionMet = false;
@@ -220,9 +238,12 @@ async function etherscanIo(transactionHash) {
     }
 
     const swapInfo = cleanedSwaps[0].split(" ");
-    const swapToken = swapInfo[swapInfo.indexOf("For") - 1];
-    const swapForToken = swapInfo[swapInfo.indexOf("On") - 1];
-    const contract = swapInfo[swapInfo.indexOf("On") + 1];
+    const swapToken =
+      swapInfo[swapInfo.map((el) => el.toLowerCase()).indexOf("for") - 1];
+    const swapForToken =
+      swapInfo[swapInfo.map((el) => el.toLowerCase()).indexOf("on") - 1];
+    const contract =
+      swapInfo[swapInfo.map((el) => el.toLowerCase()).indexOf("on") + 1];
 
     if (cleanedSwaps.length === 2) {
       handleTwoSwaps(cleanedSwaps, swapToken, swapForToken, contract);
@@ -247,6 +268,8 @@ async function etherscanIo(transactionHash) {
         cleanedSwaps.forEach((swap) => console.log(swap));
       }
     }
+    const utcLocalDate = $("#showUtcLocalDate").text().trim();
+    console.log("Date:", utcLocalDate);
 
     console.log(
       "--------------------------------------------------------------------"
@@ -264,7 +287,7 @@ async function etherscanIo(transactionHash) {
 }
 
 etherscanIo(
-  "0xb648b9bd1c74bcea61cb83c8ab2012fcbd7af72155f859f56372bd71c37185a0"
+  "0x6069c8f648c57484781cd20b84a8ff3fbcdc93d00eea6e36f9ba3bd44817dbf0"
 );
 
 //0x2077cd55ed3a1704dada5129c4fd58ec6ea9fd57d100c6bbc1e6ff5bf72cca1c
