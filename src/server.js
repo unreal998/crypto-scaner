@@ -22,7 +22,7 @@ const web3 = new Web3(
 );
 
 let lastCheckedBlock = null; // Змінна для зберігання останнього перевіреного блоку
-const logFilePath = path.join(__dirname, "transactions_log.txt"); // Шлях до файлу для запису
+const logFilePath = path.join(__dirname, "transactions_shorts.txt"); // Шлях до файлу для запису
 
 // Функція для запису даних у файл
 function logToFile(data) {
@@ -31,6 +31,24 @@ function logToFile(data) {
       console.error("Помилка запису в файл:", err);
     }
   });
+}
+
+// Функція для перевірки кількості токенів через події Transfer
+async function containsMultipleTokens(txHash) {
+  try {
+    const receipt = await web3.eth.getTransactionReceipt(txHash);
+
+    const transferEvents = receipt.logs.filter(
+      (log) =>
+        log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
+    );
+
+    // Якщо більше однієї події Transfer, значить задіяно кілька токенів
+    return transferEvents.length > 1;
+  } catch (error) {
+    console.error("Помилка під час отримання подій Transfer:", error);
+    return false;
+  }
 }
 
 // Функція для отримання останнього блоку і його транзакцій
@@ -46,10 +64,19 @@ async function getLastTransactions() {
       for (const txHash of latestBlock.transactions) {
         const transaction = await web3.eth.getTransaction(txHash);
 
+        // Отримуємо відправника транзакції
+        const fromAddress = transaction.from;
+
         // Сигнатура методу - це перші 4 байти від поля input
         const methodSignature = transaction.input.slice(0, 10); // 0x + 8 символів (4 байти)
 
-        const logData = `hash: '${txHash}', method signature: '${methodSignature}'`;
+        // Перевіряємо, чи є кілька токенів через події Transfer
+        const isMultipleTokens = await containsMultipleTokens(txHash);
+
+        // Якщо кілька токенів, додаємо "+" перед хешем
+        const logData = `${
+          isMultipleTokens ? "+" : ""
+        }hash: '${txHash}', from: '${fromAddress}', method signature: '${methodSignature}'`;
         console.log(logData); // Виводимо в консоль
         logToFile(logData); // Записуємо в файл
       }
