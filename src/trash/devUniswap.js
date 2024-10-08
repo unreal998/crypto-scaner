@@ -3,7 +3,7 @@ import axios from "axios";
 import { ETHER_SCAN_API_KEY, ETHER_SCAN_API_ENDPOINT } from "../constants.js";
 
 const web3 = new Web3(
-  "https://mainnet.infura.io/v3/1be75a3378bf4f9e9a9c7a0a9672942b"
+  "https://mainnet.infura.io/v3/748fe6f1298e4171bf93bff233e9a598"
 );
 
 const ERC20_ABI = [

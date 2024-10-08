@@ -18,7 +18,7 @@ app.set("trust proxy", true);
 const server = http.createServer(app);
 
 const web3 = new Web3(
-  "https://mainnet.infura.io/v3/1be75a3378bf4f9e9a9c7a0a9672942b"
+  "https://mainnet.infura.io/v3/748fe6f1298e4171bf93bff233e9a598"
 );
 
 let lastCheckedBlock = null; // Змінна для зберігання останнього перевіреного блоку
@@ -33,53 +33,29 @@ function logToFile(data) {
   });
 }
 
-// Функція для перевірки кількості токенів через події Transfer
-async function containsMultipleTokens(txHash) {
-  try {
-    const receipt = await web3.eth.getTransactionReceipt(txHash);
-
-    const transferEvents = receipt.logs.filter(
-      (log) =>
-        log.topics[0] === web3.utils.sha3("Transfer(address,address,uint256)")
-    );
-
-    // Якщо більше однієї події Transfer, значить задіяно кілька токенів
-    return transferEvents.length > 1;
-  } catch (error) {
-    console.error("Помилка під час отримання подій Transfer:", error);
-    return false;
-  }
-}
-
 // Функція для отримання останнього блоку і його транзакцій
 async function getLastTransactions() {
   try {
-    const latestBlock = await web3.eth.getBlock("latest");
+    const latestBlock = await web3.eth.getBlock("latest", true); // Отримуємо блок із транзакціями
 
     // Перевіряємо, чи блок новий
     if (lastCheckedBlock !== latestBlock.number) {
       lastCheckedBlock = latestBlock.number;
 
-      // Обробляємо кожну транзакцію
-      for (const txHash of latestBlock.transactions) {
-        const transaction = await web3.eth.getTransaction(txHash);
-
-        // Отримуємо відправника транзакції
+      // Масив для запису всіх транзакцій
+      const transactionsLog = latestBlock.transactions.map((transaction) => {
+        const txHash = transaction.hash;
         const fromAddress = transaction.from;
+        const methodSignature = transaction.input.slice(0, 10); // Сигнатура методу - перші 4 байти
 
-        // Сигнатура методу - це перші 4 байти від поля input
-        const methodSignature = transaction.input.slice(0, 10); // 0x + 8 символів (4 байти)
+        // Формуємо дані для запису
+        return `hash: '${txHash}', from: '${fromAddress}', method signature: '${methodSignature}'`;
+      });
 
-        // Перевіряємо, чи є кілька токенів через події Transfer
-        const isMultipleTokens = await containsMultipleTokens(txHash);
-
-        // Якщо кілька токенів, додаємо "+" перед хешем
-        const logData = `${
-          isMultipleTokens ? "+" : ""
-        }hash: '${txHash}', from: '${fromAddress}', method signature: '${methodSignature}'`;
-        console.log(logData); // Виводимо в консоль
-        logToFile(logData); // Записуємо в файл
-      }
+      // Записуємо всі транзакції з блоку в файл
+      const logData = transactionsLog.join("\n");
+      console.log(logData); // Виводимо в консоль для налагодження
+      logToFile(logData); // Записуємо в файл
     } else {
       console.log("Немає нових блоків...");
     }
@@ -91,6 +67,6 @@ async function getLastTransactions() {
 // Запуск перевірки нових транзакцій кожні 2 секунди
 setInterval(() => {
   getLastTransactions();
-}, 2000);
+}, 6000);
 
 export default server;

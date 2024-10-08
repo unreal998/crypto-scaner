@@ -7,7 +7,7 @@ import {
 } from "./src/constants.js";
 
 const web3 = new Web3(
-  "https://mainnet.infura.io/v3/1be75a3378bf4f9e9a9c7a0a9672942b"
+  "https://mainnet.infura.io/v3/748fe6f1298e4171bf93bff233e9a598"
 );
 
 const ERC20_ABI = [
@@ -149,5 +149,5 @@ export async function transactionsInfo(txHash) {
 }
 
 transactionsInfo(
-  "0x16d215df8848bbee78cd918543686fc0b120e254b4f32964e570664a35fb97c2"
+  "0x5e997029bd069aa1220189283cb9d55d59569d4269cccfbb5f45544f1bc834b9"
 );
